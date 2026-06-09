@@ -1,0 +1,504 @@
+{
+  "schematic_file": "DK033-A1-BS_V1.3_SCH_20241121OK.pdf",
+  "mcu": {
+    "part_number": "KW45B41Z83AFTBT",
+    "package": "QFN48_7X7",
+    "vendor": "NXP",
+    "reference": "U8",
+    "page": 4
+  },
+  "pages": [
+    {
+      "page": 1,
+      "title": "BLOCK",
+      "type": "block_diagram"
+    },
+    {
+      "page": 2,
+      "title": "POWER",
+      "type": "power_supply"
+    },
+    {
+      "page": 3,
+      "title": "CAN PHY",
+      "type": "can_transceiver"
+    },
+    {
+      "page": 4,
+      "title": "BLE",
+      "type": "mcu_pinout"
+    },
+    {
+      "page": 5,
+      "title": "UWB",
+      "type": "uwb_module"
+    },
+    {
+      "page": 6,
+      "title": "UWB",
+      "type": "rf_switch"
+    },
+    {
+      "page": 7,
+      "title": "ADDITIONAL",
+      "type": "additional"
+    },
+    {
+      "page": 8,
+      "title": "Change list",
+      "type": "revision_history"
+    }
+  ],
+  "pin_map": [
+    {
+      "pin_name": "PTB3",
+      "pin_number": 1,
+      "net_name": "BLE_UWB_SPI_MOSI",
+      "function": "LPSPI1_SOUT",
+      "category": "spi",
+      "page": 4
+    },
+    {
+      "pin_name": "PTB4",
+      "pin_number": 2,
+      "net_name": "BLE_UWB_CLK_SYNC",
+      "function": "GPIO",
+      "category": "gpio",
+      "page": 4
+    },
+    {
+      "pin_name": "PTB5",
+      "pin_number": 3,
+      "net_name": "UWB_nRST",
+      "function": "GPIO",
+      "category": "gpio",
+      "page": 4
+    },
+    {
+      "pin_name": "PTA0",
+      "pin_number": 8,
+      "net_name": "BLE_SWDIO",
+      "function": "SWD_DIO",
+      "category": "debug",
+      "page": 4
+    },
+    {
+      "pin_name": "PTA1",
+      "pin_number": 9,
+      "net_name": "BLE_SWCLK",
+      "function": "SWD_CLK",
+      "category": "debug",
+      "page": 4
+    },
+    {
+      "pin_name": "PTA4",
+      "pin_number": 10,
+      "net_name": "BLE_BOOT_CFG",
+      "function": "GPIO",
+      "category": "gpio",
+      "page": 4
+    },
+    {
+      "pin_name": "PTA16",
+      "pin_number": 11,
+      "net_name": "BLE_WDI",
+      "function": "GPIO",
+      "category": "gpio",
+      "page": 4
+    },
+    {
+      "pin_name": "PTA17",
+      "pin_number": 12,
+      "net_name": "BLE_LR_ID0",
+      "function": "GPIO",
+      "category": "gpio",
+      "page": 4
+    },
+    {
+      "pin_name": "PTA18",
+      "pin_number": 13,
+      "net_name": "BLE_LR_ID1",
+      "function": "GPIO",
+      "category": "gpio",
+      "page": 4
+    },
+    {
+      "pin_name": "PTA19",
+      "pin_number": 14,
+      "net_name": null,
+      "function": "GPIO",
+      "category": "gpio",
+      "page": 4
+    },
+    {
+      "pin_name": "PTA20",
+      "pin_number": 17,
+      "net_name": "Car_Configuration",
+      "function": "ADC0_A14",
+      "category": "adc",
+      "page": 4
+    },
+    {
+      "pin_name": "PTA21",
+      "pin_number": 18,
+      "net_name": "BLE_VCC_ID",
+      "function": "ADC0_A15",
+      "category": "adc",
+      "page": 4
+    },
+    {
+      "pin_name": "PTD0",
+      "pin_number": 23,
+      "net_name": "BLE_RESET",
+      "function": "RESET",
+      "category": "reset",
+      "page": 4
+    },
+    {
+      "pin_name": "PTD1",
+      "pin_number": 24,
+      "net_name": "BLE_BAT_DET_EN",
+      "function": "ADC0_B5",
+      "category": "adc",
+      "page": 4
+    },
+    {
+      "pin_name": "PTD2",
+      "pin_number": 25,
+      "net_name": "HW_VER",
+      "function": "ADC0_A6",
+      "category": "adc",
+      "page": 4
+    },
+    {
+      "pin_name": "PTD3",
+      "pin_number": 26,
+      "net_name": "BAT_ADC",
+      "function": "ADC0_B6",
+      "category": "adc",
+      "page": 4
+    },
+    {
+      "pin_name": "PTD4",
+      "pin_number": 27,
+      "net_name": "BLE_XTAL_32K",
+      "function": "XTAL32K",
+      "category": "clock",
+      "page": 4
+    },
+    {
+      "pin_name": "PTD5",
+      "pin_number": 28,
+      "net_name": "BLE_EXTAL_32K",
+      "function": "XTAL32K",
+      "category": "clock",
+      "page": 4
+    },
+    {
+      "pin_name": "PTC0",
+      "pin_number": 37,
+      "net_name": "CAN_TXD",
+      "function": "CAN0_TX",
+      "category": "can",
+      "page": 4
+    },
+    {
+      "pin_name": "PTC1",
+      "pin_number": 38,
+      "net_name": "CAN_RXD",
+      "function": "CAN0_RX",
+      "category": "can",
+      "page": 4
+    },
+    {
+      "pin_name": "PTC2",
+      "pin_number": 39,
+      "net_name": "BLE_DEBUG_RXD",
+      "function": "LPUART1_RX",
+      "category": "uart_rx",
+      "page": 4
+    },
+    {
+      "pin_name": "PTC3",
+      "pin_number": 40,
+      "net_name": "BLE_DEBUG_TXD",
+      "function": "LPUART1_TX",
+      "category": "uart_tx",
+      "page": 4
+    },
+    {
+      "pin_name": "PTC4",
+      "pin_number": 42,
+      "net_name": "BLE_UWB_PWREN",
+      "function": "GPIO",
+      "category": "gpio",
+      "page": 4
+    },
+    {
+      "pin_name": "PTC5",
+      "pin_number": 43,
+      "net_name": "BLE_UWB_nRDY",
+      "function": "GPIO",
+      "category": "gpio",
+      "page": 4
+    },
+    {
+      "pin_name": "PTC6",
+      "pin_number": 44,
+      "net_name": "BLE_UWB_nINT",
+      "function": "GPIO",
+      "category": "gpio",
+      "page": 4
+    },
+    {
+      "pin_name": "PTC7",
+      "pin_number": 45,
+      "net_name": "CAN_STB",
+      "function": "GPIO",
+      "category": "gpio",
+      "page": 4
+    },
+    {
+      "pin_name": "PTB0",
+      "pin_number": 46,
+      "net_name": "BLE_UWB_SPI_CS",
+      "function": "LPSPI1_PCS0",
+      "category": "spi",
+      "page": 4
+    },
+    {
+      "pin_name": "PTB1",
+      "pin_number": 47,
+      "net_name": "BLE_UWB_SPI_MISO",
+      "function": "LPSPI1_SIN",
+      "category": "spi",
+      "page": 4
+    },
+    {
+      "pin_name": "PTB2",
+      "pin_number": 48,
+      "net_name": "BLE_UWB_SPI_CLK",
+      "function": "LPSPI1_SCK",
+      "category": "spi",
+      "page": 4
+    }
+  ],
+  "interfaces": {
+    "uart": [
+      {
+        "instance": "LPUART1",
+        "tx": {
+          "pin": "PTC3",
+          "number": 40,
+          "net": "BLE_DEBUG_TXD"
+        },
+        "rx": {
+          "pin": "PTC2",
+          "number": 39,
+          "net": "BLE_DEBUG_RXD"
+        },
+        "usage": "DEBUG UART",
+        "page": 4
+      }
+    ],
+    "spi": [
+      {
+        "instance": "LPSPI1",
+        "sck": {
+          "pin": "PTB2",
+          "number": 48,
+          "net": "BLE_UWB_SPI_CLK"
+        },
+        "mosi": {
+          "pin": "PTB3",
+          "number": 1,
+          "net": "BLE_UWB_SPI_MOSI"
+        },
+        "miso": {
+          "pin": "PTB1",
+          "number": 47,
+          "net": "BLE_UWB_SPI_MISO"
+        },
+        "cs": {
+          "pin": "PTB0",
+          "number": 46,
+          "net": "BLE_UWB_SPI_CS"
+        },
+        "usage": "UWB communication (NCJ29D6)",
+        "page": 4
+      }
+    ],
+    "i2c": [],
+    "can": [
+      {
+        "instance": "CAN0",
+        "tx": {
+          "pin": "PTC0",
+          "number": 37,
+          "net": "CAN_TXD"
+        },
+        "rx": {
+          "pin": "PTC1",
+          "number": 38,
+          "net": "CAN_RXD"
+        },
+        "stb": {
+          "pin": "PTC7",
+          "number": 45,
+          "net": "CAN_STB"
+        },
+        "usage": "CAN-FD bus (via TJA1443 PHY on page 3)",
+        "page": 4
+      }
+    ],
+    "adc": [
+      {
+        "pin": "PTA20",
+        "number": 17,
+        "channel": "ADC0_A14",
+        "net": "Car_Configuration",
+        "usage": "Car configuration ID (resistor divider)"
+      },
+      {
+        "pin": "PTA21",
+        "number": 18,
+        "channel": "ADC0_A15",
+        "net": "BLE_VCC_ID",
+        "usage": "VCC ID detection"
+      },
+      {
+        "pin": "PTD2",
+        "number": 25,
+        "channel": "ADC0_A6",
+        "net": "HW_VER",
+        "usage": "Hardware version detection"
+      },
+      {
+        "pin": "PTD3",
+        "number": 26,
+        "channel": "ADC0_B6",
+        "net": "BAT_ADC",
+        "usage": "Battery voltage monitoring"
+      }
+    ],
+    "pwm": [],
+    "debug": [
+      {
+        "instance": "SWD",
+        "swdio": {
+          "pin": "PTA0",
+          "number": 8,
+          "net": "BLE_SWDIO"
+        },
+        "swclk": {
+          "pin": "PTA1",
+          "number": 9,
+          "net": "BLE_SWCLK"
+        },
+        "usage": "BLE MCU SWD debug",
+        "page": 4
+      }
+    ]
+  },
+  "power_domains": [
+    {
+      "net": "#H#SYS_12V",
+      "voltage": "12V",
+      "type": "input",
+      "description": "System 12V from vehicle"
+    },
+    {
+      "net": "#A#VCC_5V",
+      "voltage": "5V",
+      "type": "DCDC",
+      "description": "5V rail (DCDC from 12V)"
+    },
+    {
+      "net": "#A#VCC_3V3",
+      "voltage": "3.3V",
+      "type": "LDO",
+      "description": "3.3V main logic rail (TLV70233)"
+    },
+    {
+      "net": "#A#BLE_VDD_DCDC",
+      "voltage": "1.8V",
+      "type": "DCDC",
+      "description": "BLE MCU DCDC supply"
+    },
+    {
+      "net": "#A#BLE_1V8_DCDC",
+      "voltage": "1.8V",
+      "type": "DCDC",
+      "description": "BLE MCU analog/LDO core"
+    },
+    {
+      "net": "#A#BLE_VDD_CORE",
+      "voltage": "1.1V",
+      "type": "internal",
+      "description": "BLE MCU core voltage"
+    },
+    {
+      "net": "#A#BLE_VDD_RF",
+      "voltage": "1.8V",
+      "type": "internal",
+      "description": "BLE MCU RF supply"
+    },
+    {
+      "net": "#A#VDD_SYS",
+      "voltage": "1.8V",
+      "type": "internal",
+      "description": "BLE MCU system supply"
+    },
+    {
+      "net": "UWB_3V3",
+      "voltage": "3.3V",
+      "type": "LDO",
+      "description": "UWB module 3.3V (TPS74601, enable: BLE_UWB_PWREN)"
+    }
+  ],
+  "clock": {
+    "hse": {
+      "frequency": "32MHz",
+      "type": "crystal",
+      "component": "X3",
+      "pins": [
+        32,
+        33
+      ],
+      "nets": [
+        "BLE_XTAL_32M",
+        "BLE_EXTAL_32M"
+      ]
+    },
+    "lse": {
+      "frequency": "32.768kHz",
+      "type": "crystal",
+      "component": "X2",
+      "pins": [
+        27,
+        28
+      ],
+      "nets": [
+        "BLE_XTAL_32K",
+        "BLE_EXTAL_32K"
+      ]
+    }
+  },
+  "notes": [
+    "Design supports both LDO and DCDC mode (DCDC default for vehicle, R55 NC / L2+R59+C77+C78+C79 populated)",
+    "XTAL_OUT (pin 31) must be disabled for EMC compliance",
+    "UWB module communicates via LPSPI1 (SPI) with clock sync and GPIO handshake",
+    "CAN-FD PHY on page 3, ID0/ID1 for left/right module differentiation",
+    "Watchdog: U6 STWD100 or U7 TPS3435 (NC alternate)",
+    "HW_VER and Car_Configuration use resistor divider ADC for version detection (11 levels)",
+    "VOUT_SWITCH max 40mA, Rdson max 3 ohm - not recommended for external supply",
+    "BLE antenna: 2.4GHz with SAW filter (FSSCAN1N2G44H4PEUA) and matching network"
+  ],
+  "unresolved_pins": [
+    {
+      "pin_name": "PTA19",
+      "pin_number": 14,
+      "reason": "No visible net label in coordinate extraction"
+    }
+  ]
+}
