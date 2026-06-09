@@ -67,23 +67,28 @@ for t in page['texts']:
 ### Step 4: 视觉识别（仅当以上步骤无法回答时）
 
 **仅在以下情况才使用：**
-- Step 2 搜索到了相关文字，但无法仅凭文字理解电路拓扑（如分压比、滤波器结构）
-- 目标页面是纯位图（缓存中 `page.type == "bitmap"`）
-- 用户明确要求"画出电路"或"看一下连接方式"
+- 目标页面是纯位图（缓存中 `page.type == "bitmap"`），文字提取为空
+- 用户明确要求"看一下电路图"或"截图给我看看"
+
+**以下问题禁止使用视觉，必须用文字回答：**
+- 引脚号/引脚名 → Step 2+3
+- 网络名/信号名 → Step 2
+- MCU型号 → Step 2
+- 接口类型(UART/SPI/I2C) → Step 2
+- 电源域名称 → Step 2
+- 电阻/电容值 → Step 2（原理图标注文字中有）
+- 上下拉配置 → Step 2+3
 
 ```python
 import fitz
 
 doc = fitz.open(pdf_path)
 page = doc[page_index]
-
-# 以Step 2找到的坐标为中心，裁剪周围区域
 clip = fitz.Rect(target_x - 100, target_y - 50, target_x + 300, target_y + 50)
 mat = fitz.Matrix(8, 8)
 pix = page.get_pixmap(matrix=mat, clip=clip)
 pix.save('region.png')
 doc.close()
-# 然后用 Read 工具查看 region.png
 ```
 
 **禁止跳过 Step 2/3 直接使用视觉识别。**
