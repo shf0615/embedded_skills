@@ -7,3 +7,5 @@ sch_all_text.txt
 
 # PDF原理图文件（太大不适合提交到git）
 *.pdf
+*.sch.json
+*.ds.json
