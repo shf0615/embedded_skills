@@ -15,23 +15,66 @@ description: 从原理图PDF中查找硬件设计信息，基于事实回答，�
 
 ---
 
-## 执行流程
+## 执行流程（按需组合）
 
-### 第一次分析某份PDF时
+### Step 1: 生成缓存（首次）
 
-运行 `scripts/extract_sch.py <pdf路径>`，生成缓存文件 `<pdf名>.sch.json`。
+如果同目录下不存在 `<pdf名>.sch.json`，运行：
 
-缓存内容包括：
-- PDF结构信息（每页类型：矢量/位图/混合）
-- 所有页面的全部文字（带坐标）
-- 自动识别的MCU引脚列表
+```bash
+python3 scripts/extract_sch.py <pdf路径>
+```
 
-### 回答问题时
+生成缓存文件，包含每页的全部文字（带坐标）和自动识别的MCU引脚列表。
 
-1. 加载缓存JSON
-2. 根据问题关键词搜索相关文字
-3. 必要时用坐标关系推断连接
-4. 必要时渲染局部区域做视觉识别补充
+### Step 2: 关键词搜索
+
+加载缓存JSON，搜索与问题相关的文字：
+
+```python
+import json
+
+with open('xxx.sch.json') as f:
+    cache = json.load(f)
+
+keyword = 'BAT'  # 从用户问题提取
+for page in cache['pages']:
+    for t in page['texts']:
+        if keyword.upper() in t['text'].upper():
+            print(f"Page {page['page']}, [{t['x']:.0f},{t['y']:.0f}]: {t['text']}")
+```
+
+### Step 3: 坐标关联（确认引脚连接）
+
+当需要确认"某信号连接到哪个引脚"时，在同一页中找Y坐标相近的引脚描述：
+
+```python
+target_y = ...  # Step 2中找到的目标信号Y坐标
+tolerance = 5
+
+for t in page['texts']:
+    if abs(t['y'] - target_y) < tolerance and '/' in t['text']:
+        print(f"Pin: {t['text']}")
+```
+
+### Step 4: 视觉识别（看电路拓扑）
+
+当文字提取不足以回答（如需看分压电阻拓扑、滤波电路结构）时，渲染局部区域：
+
+```python
+import fitz
+
+doc = fitz.open(pdf_path)
+page = doc[page_index]
+
+# 以目标信号坐标为中心，裁剪周围区域，高倍渲染
+clip = fitz.Rect(target_x - 100, target_y - 50, target_x + 300, target_y + 50)
+mat = fitz.Matrix(8, 8)
+pix = page.get_pixmap(matrix=mat, clip=clip)
+pix.save('region.png')
+doc.close()
+# 然后用 Read 工具查看 region.png
+```
 
 ---
 
@@ -44,8 +87,8 @@ description: 从原理图PDF中查找硬件设计信息，基于事实回答，�
 ### 证据
 - **Page X**: [原文文字]
 
-### 电路描述（如适用）
-[连接关系说明]
+### 补充说明（如适用）
+[电路描述、连接关系、设计意图等，必须基于原理图内容]
 ```
 
 ---

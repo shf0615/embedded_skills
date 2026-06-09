@@ -63,7 +63,19 @@ doc.close()
 
 ### Step 4: 视觉补充（如需要）
 
-表格、框图等结构化内容文字提取可能丢失格式，渲染为图片后视觉识别。
+表格、框图等结构化内容文字提取可能丢失格式，渲染为图片后视觉识别：
+
+```python
+import fitz
+
+doc = fitz.open(pdf_path)
+page = doc[page_num - 1]
+mat = fitz.Matrix(3, 3)  # 3x渲染即可看清
+pix = page.get_pixmap(matrix=mat)
+pix.save('page_view.png')
+doc.close()
+# 然后用 Read 工具查看 page_view.png
+```
 
 ---
 
