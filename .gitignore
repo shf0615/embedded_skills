@@ -1,0 +1,9 @@
+# 测试生成的临时文件
+sch_pages/
+sch_hires/
+sch_ultra/
+sch_raw_images/
+sch_all_text.txt
+
+# PDF原理图文件（太大不适合提交到git）
+*.pdf
