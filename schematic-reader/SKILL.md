@@ -12,60 +12,41 @@ description: 从原理图PDF中查找硬件设计信息，基于事实回答，�
 1. **不捏造** — 找不到就说"未找到"，不根据经验脑补
 2. **引用出处** — 回答中标注页码和原文
 3. **准确性优先于速度** — 宁可多读一页确认，不要因为坐标匹配"看起来对"就下结论
-4. **上下文理解** — 读取目标信号周围的完整文字块，通过语义理解确认连接关系，而非仅靠坐标数值
+4. **上下文理解** — 通过语义理解确认连接关系，而非仅靠坐标数值
+5. **一次读完** — 原理图通常不超过20页，直接一次提取全文比反复搜索更快更准
 
 ---
 
 ## 执行流程
 
-根据问题类型选择不同路径：
+### 所有问题的统一入口：一次性提取全文
 
-### 概述类问题（"这是什么板子"、"有哪些模块"）
-
-直接用 PyMuPDF 提取所有页面的全文，通读后总结：
+原理图PDF通常只有几页到十几页。**不论什么问题，第一步都是提取全部页面文字：**
 
 ```python
 import fitz
 doc = fitz.open(pdf_path)
+all_text = {}
 for i in range(doc.page_count):
-    text = doc[i].get_text()
+    all_text[i+1] = doc[i].get_text()
     print(f'=== Page {i+1} ===')
-    print(text)
+    print(all_text[i+1])
 doc.close()
 ```
 
-不需要缓存，不需要关键词搜索，直接读全文最快最准。
+**然后根据问题类型决定是否需要进一步分析：**
 
-### 精确查询（"UART用什么引脚"、"BAT怎么检测"）
+### 概述类问题 → 直接从全文总结
 
-**Step 1: 关键词定位页面**
+通读全文即可回答，无需额外操作。
 
-```python
-import fitz
-doc = fitz.open(pdf_path)
-keywords = ['UART', 'DEBUG', 'TXD', 'RXD']  # 从问题提取
-for i in range(doc.page_count):
-    text = doc[i].get_text()
-    if any(k.upper() in text.upper() for k in keywords):
-        print(f'Page {i+1}: hit')
-doc.close()
-```
+### 精确查询（引脚、电路方案等） → 从全文中定位 + 坐标辅助
 
-**Step 2: 读取命中页面的完整文字**
-
-对命中页面，提取完整文本内容，**通读理解**而非仅搜索关键词：
+从已有全文中找到相关内容后，如需确认引脚对应关系，**再对目标页面做坐标分析**：
 
 ```python
+# 仅对需要确认引脚对应的页面做坐标提取
 page = doc[hit_page_index]
-text = page.get_text()
-print(text)  # 完整阅读该页所有文字
-```
-
-**Step 3: 如需确认引脚对应关系，提取带坐标文字做辅助验证**
-
-仅当Step 2的纯文本无法明确确认"哪个引脚连哪个网络"时，才用坐标辅助：
-
-```python
 blocks = page.get_text('dict')['blocks']
 texts = []
 for block in blocks:
@@ -76,28 +57,30 @@ for block in blocks:
                 if t:
                     texts.append((span['bbox'][0], span['bbox'][1], t))
 
-# 找目标网络名的位置
-target = 'BLE_DEBUG_TXD'
-target_y = None
-for x, y, t in texts:
-    if target in t:
-        target_y = y
-
-# 查看同行附近的所有文字（±8pt容差），人工判断哪个是对应引脚
-if target_y:
-    for x, y, t in sorted(texts, key=lambda i: i[0]):
-        if abs(y - target_y) < 8:
-            print(f'  [{x:.0f},{y:.0f}] {t}')
+# 打印目标信号同行所有文字，由AI语义判断对应关系
+target_y = ...
+for x, y, t in sorted(texts, key=lambda i: i[0]):
+    if abs(y - target_y) < 8:
+        print(f'  [{x:.0f},{y:.0f}] {t}')
 ```
 
-**关键：打印出同行所有文字后，由AI通过语义理解判断对应关系，而非盲目取第一个含"/"的文字。**
+### 包含表格数据的问题（如天线切换真值表） → pdfplumber提取表格
 
-**Step 4: 视觉验证（可选，非必需）**
-
-仅当上述步骤的结论存在歧义（如同行有多个引脚描述），或页面为纯位图时使用：
+当全文中看到表格相关内容但格式混乱时，用pdfplumber提取结构化表格：
 
 ```python
-# 以目标坐标为中心渲染局部区域
+import pdfplumber
+with pdfplumber.open(pdf_path) as pdf:
+    page = pdf.pages[hit_page_index]
+    tables = page.extract_tables()
+    for table in tables:
+        for row in table:
+            print(row)
+```
+
+### 视觉验证 → 仅当有歧义或纯位图时
+
+```python
 clip = fitz.Rect(target_x - 150, target_y - 30, target_x + 400, target_y + 30)
 mat = fitz.Matrix(8, 8)
 pix = page.get_pixmap(matrix=mat, clip=clip)
@@ -124,7 +107,7 @@ pix.save('verify.png')
 ## 注意事项
 
 1. **不捏造** — 找不到就说找不到
-2. **不盲信坐标** — 坐标匹配只是辅助手段，最终判断靠语义理解上下文
-3. **概述类直接读全文** — 不要逐关键词搜索，一次性读完所有页面全文最快
-4. **多MCU系统** — 需指明是哪个MCU的引脚
-5. **有歧义时说明** — 如果坐标匹配出现多个候选，列出所有候选并说明不确定性
+2. **不盲信坐标** — 坐标匹配只是辅助，最终靠语义理解
+3. **一次读完全文** — 原理图几页到十几页，一次读完比反复搜索更快
+4. **表格用pdfplumber** — 真值表/配置表等结构化数据用pdfplumber提取更准确
+5. **有歧义时说明** — 列出所有候选并说明不确定性

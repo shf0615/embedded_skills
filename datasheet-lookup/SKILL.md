@@ -33,70 +33,75 @@ for i in range(min(30, doc.page_count)):
 doc.close()
 ```
 
-不需要索引，不需要关键词搜索，直接读前面的章节最快最准。
+### 单章节精确查询（"LPUART如何初始化"、"PTA0复用功能"）
 
-### 精确查询（"LPUART如何初始化"、"PTA0复用功能"）
+信息集中在一个章节内，用TOC快速定位后连续读取：
 
-**Step 1: 获取目录定位章节**
+**Step 1: TOC定位章节起止页**
 
 ```python
 import fitz
 doc = fitz.open(pdf_path)
-
-# 方法A: 用PyMuPDF的TOC功能
 toc = doc.get_toc()
 for level, title, page in toc:
     if any(k in title.upper() for k in keywords):
         print(f'  [{page}] {title}')
-
-# 方法B: 如果TOC为空，读前5页文字找目录
-if not toc:
-    for i in range(5):
-        print(doc[i].get_text())
 doc.close()
 ```
 
-**Step 2: 关键词搜索定位具体页码**
+**Step 2: 连续读取目标章节**
 
-在目标章节范围内搜索：
+定位到章节起始页后，**连续读取该章节的所有页面**（不要逐页搜索再逐页读取）：
 
 ```python
 doc = fitz.open(pdf_path)
-keywords = ['LPUART', 'initialization']
-
-for i in range(start_page, end_page):
+# 一次性读取章节范围内的所有页面
+for i in range(chapter_start, chapter_end):
     text = doc[i].get_text()
-    if any(k.upper() in text.upper() for k in keywords):
-        print(f'Page {i+1}: hit')
-doc.close()
-```
-
-**Step 3: 精确读取目标页面**
-
-读取命中页面的**完整文字**，通读理解后提取答案：
-
-```python
-doc = fitz.open(pdf_path)
-for page_num in hit_pages:
-    text = doc[page_num - 1].get_text()
-    print(f'=== Page {page_num} ===')
+    print(f'=== Page {i+1} ===')
     print(text)
 doc.close()
 ```
 
-**注意：** 如果内容跨页（如表格、配置步骤），顺序读取相邻页面直到内容完整。
+**关键：找到章节后直接连续读，不要再做关键词搜索来逐页判断要不要读。**
 
-**Step 4: 视觉补充（仅表格/框图结构丢失时）**
+### 多章节综合查询（"低功耗模式"、"时钟树"等涉及多个章节的问题）
 
-当文字提取丢失了表格结构（如引脚复用表的列对齐），渲染为图片辅助理解：
+信息分散在多个章节，**按相关章节顺序依次读取**：
+
+**Step 1: TOC定位所有相关章节**
 
 ```python
-doc = fitz.open(pdf_path)
+toc = doc.get_toc()
+# 一次找到所有相关章节
+related_keywords = ['POWER', 'CMC', 'SPC', 'WUU', 'SLEEP']  # 根据问题列出
+for level, title, page in toc:
+    if any(k in title.upper() for k in related_keywords):
+        print(f'  [{page}] {title}')
+```
+
+**Step 2: 对每个相关章节，读取开头的概述/介绍部分（通常5-10页）**
+
+不需要读完整个章节（可能上百页），只读每个章节的前几页概述和关键表格：
+
+```python
+# 对每个相关章节，读前5-10页获取核心信息
+for chapter_start in related_chapters:
+    for i in range(chapter_start, min(chapter_start + 10, doc.page_count)):
+        text = doc[i].get_text()
+        print(f'=== Page {i+1} ===')
+        print(text)
+```
+
+**Step 3: 如果需要更多细节，再针对性读取特定小节**
+
+### 视觉补充（仅表格结构丢失时）
+
+```python
 page = doc[page_num - 1]
 mat = fitz.Matrix(3, 3)
 pix = page.get_pixmap(matrix=mat)
 pix.save('table_view.png')
-doc.close()
 ```
 
 ---
@@ -123,4 +128,5 @@ doc.close()
 2. **标注手册版本** — 开头说明使用的手册版本
 3. **表格跨页** — 注意翻页读完整
 4. **概述类直接读前30页** — 不需要先建索引
-5. **精确查询先用TOC定位** — PyMuPDF的`get_toc()`比全文搜索快得多
+5. **单章节问题** — TOC定位后连续读取，不要逐页搜索
+6. **多章节问题** — 先TOC列出所有相关章节，再每个读概述部分，避免反复定位
