@@ -11,87 +11,98 @@ description: 从原理图PDF中查找硬件设计信息，基于事实回答，�
 
 1. **不捏造** — 找不到就说"未找到"，不根据经验脑补
 2. **引用出处** — 回答中标注页码和原文
-3. **缓存复用** — 同一份PDF的分析结果缓存，避免重复提取
-4. **文字优先** — 必须先用文字提取（Step 1-3）尝试回答，只有文字提取**确实无法回答**时才使用视觉识别（Step 4）
+3. **准确性优先于速度** — 宁可多读一页确认，不要因为坐标匹配"看起来对"就下结论
+4. **上下文理解** — 读取目标信号周围的完整文字块，通过语义理解确认连接关系，而非仅靠坐标数值
 
 ---
 
 ## 执行流程
 
-**严格按顺序执行 Step 1→2→3，绝大多数问题到 Step 3 即可回答。仅当 Step 3 无法给出答案时才执行 Step 4。**
+根据问题类型选择不同路径：
 
-### Step 1: 生成缓存（首次）
+### 概述类问题（"这是什么板子"、"有哪些模块"）
 
-如果同目录下不存在 `<pdf名>.sch.json`，运行：
-
-```bash
-python3 scripts/extract_sch.py <pdf路径>
-```
-
-生成缓存文件，包含每页的全部文字（带坐标）和自动识别的MCU引脚列表。
-
-### Step 2: 关键词搜索
-
-加载缓存JSON，搜索与问题相关的文字：
-
-```python
-import json
-
-with open('xxx.sch.json') as f:
-    cache = json.load(f)
-
-keyword = 'BAT'  # 从用户问题提取
-for page in cache['pages']:
-    for t in page['texts']:
-        if keyword.upper() in t['text'].upper():
-            print(f"Page {page['page']}, [{t['x']:.0f},{t['y']:.0f}]: {t['text']}")
-```
-
-**大多数问题（如MCU型号、接口引脚、网络名）到这一步就能找到答案。**
-
-### Step 3: 坐标关联（确认引脚连接）
-
-当需要确认"某信号连接到哪个引脚"时，在同一页中找Y坐标相近的引脚描述：
-
-```python
-target_y = ...  # Step 2中找到的目标信号Y坐标
-tolerance = 5
-
-for t in page['texts']:
-    if abs(t['y'] - target_y) < tolerance and '/' in t['text']:
-        print(f"Pin: {t['text']}")
-```
-
-**引脚连接问题到这一步就能回答。**
-
-### Step 4: 视觉识别（仅当以上步骤无法回答时）
-
-**仅在以下情况才使用：**
-- 目标页面是纯位图（缓存中 `page.type == "bitmap"`），文字提取为空
-- 用户明确要求"看一下电路图"或"截图给我看看"
-
-**以下问题禁止使用视觉，必须用文字回答：**
-- 引脚号/引脚名 → Step 2+3
-- 网络名/信号名 → Step 2
-- MCU型号 → Step 2
-- 接口类型(UART/SPI/I2C) → Step 2
-- 电源域名称 → Step 2
-- 电阻/电容值 → Step 2（原理图标注文字中有）
-- 上下拉配置 → Step 2+3
+直接用 PyMuPDF 提取所有页面的全文，通读后总结：
 
 ```python
 import fitz
-
 doc = fitz.open(pdf_path)
-page = doc[page_index]
-clip = fitz.Rect(target_x - 100, target_y - 50, target_x + 300, target_y + 50)
-mat = fitz.Matrix(8, 8)
-pix = page.get_pixmap(matrix=mat, clip=clip)
-pix.save('region.png')
+for i in range(doc.page_count):
+    text = doc[i].get_text()
+    print(f'=== Page {i+1} ===')
+    print(text)
 doc.close()
 ```
 
-**禁止跳过 Step 2/3 直接使用视觉识别。**
+不需要缓存，不需要关键词搜索，直接读全文最快最准。
+
+### 精确查询（"UART用什么引脚"、"BAT怎么检测"）
+
+**Step 1: 关键词定位页面**
+
+```python
+import fitz
+doc = fitz.open(pdf_path)
+keywords = ['UART', 'DEBUG', 'TXD', 'RXD']  # 从问题提取
+for i in range(doc.page_count):
+    text = doc[i].get_text()
+    if any(k.upper() in text.upper() for k in keywords):
+        print(f'Page {i+1}: hit')
+doc.close()
+```
+
+**Step 2: 读取命中页面的完整文字**
+
+对命中页面，提取完整文本内容，**通读理解**而非仅搜索关键词：
+
+```python
+page = doc[hit_page_index]
+text = page.get_text()
+print(text)  # 完整阅读该页所有文字
+```
+
+**Step 3: 如需确认引脚对应关系，提取带坐标文字做辅助验证**
+
+仅当Step 2的纯文本无法明确确认"哪个引脚连哪个网络"时，才用坐标辅助：
+
+```python
+blocks = page.get_text('dict')['blocks']
+texts = []
+for block in blocks:
+    if 'lines' in block:
+        for line in block['lines']:
+            for span in line['spans']:
+                t = span['text'].strip()
+                if t:
+                    texts.append((span['bbox'][0], span['bbox'][1], t))
+
+# 找目标网络名的位置
+target = 'BLE_DEBUG_TXD'
+target_y = None
+for x, y, t in texts:
+    if target in t:
+        target_y = y
+
+# 查看同行附近的所有文字（±8pt容差），人工判断哪个是对应引脚
+if target_y:
+    for x, y, t in sorted(texts, key=lambda i: i[0]):
+        if abs(y - target_y) < 8:
+            print(f'  [{x:.0f},{y:.0f}] {t}')
+```
+
+**关键：打印出同行所有文字后，由AI通过语义理解判断对应关系，而非盲目取第一个含"/"的文字。**
+
+**Step 4: 视觉验证（可选，非必需）**
+
+仅当上述步骤的结论存在歧义（如同行有多个引脚描述），或页面为纯位图时使用：
+
+```python
+# 以目标坐标为中心渲染局部区域
+clip = fitz.Rect(target_x - 150, target_y - 30, target_x + 400, target_y + 30)
+mat = fitz.Matrix(8, 8)
+pix = page.get_pixmap(matrix=mat, clip=clip)
+pix.save('verify.png')
+```
 
 ---
 
@@ -112,7 +123,8 @@ doc.close()
 
 ## 注意事项
 
-1. 不捏造，找不到就说找不到
-2. 视觉识别结果与文字提取矛盾时，以文字为准
-3. 多MCU系统需指明是哪个MCU的引脚
-4. **禁止**在文字搜索能解决问题时使用视觉识别（浪费token、速度慢、不如文字精确）
+1. **不捏造** — 找不到就说找不到
+2. **不盲信坐标** — 坐标匹配只是辅助手段，最终判断靠语义理解上下文
+3. **概述类直接读全文** — 不要逐关键词搜索，一次性读完所有页面全文最快
+4. **多MCU系统** — 需指明是哪个MCU的引脚
+5. **有歧义时说明** — 如果坐标匹配出现多个候选，列出所有候选并说明不确定性

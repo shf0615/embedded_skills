@@ -11,70 +11,92 @@ description: 从芯片手册PDF中查找硬件参数信息，基于事实回答�
 
 1. **不捏造** — 找不到就说"未找到"
 2. **引用出处** — 标注页码、表格编号
-3. **先定位再读取** — 不要一次读完几百页
+3. **准确性优先** — 宁可多读几页确认，不要跳过重要上下文
 
 ---
 
-## 执行流程（固定顺序）
+## 执行流程
 
-### Step 1: 定位
+根据问题类型选择不同路径：
 
-首次打开某份手册时，先读取目录页（前5页），提取章节页码索引。
+### 概述类问题（"这是什么芯片"、"主要特性"）
 
-如果已有缓存（`<pdf名>.ds.json`），直接加载。否则运行 `scripts/extract_ds_toc.py <pdf路径>` 生成。
-
-### Step 2: 搜索
-
-在缓存的 `.ds.json` 中查找目标页码：
+直接读取前20-30页（Introduction/Overview章节），通读后总结：
 
 ```python
-import json, fitz
-
-with open('xxx.ds.json') as f:
-    cache = json.load(f)
-
-# 从用户问题提取关键词，在倒排索引中查找页码
-keyword = 'uart'  # 示例
-pages = cache['keyword_index'].get(keyword, [])
-
-# 如果索引没命中，用PyMuPDF对PDF全文搜索
-if not pages:
-    doc = fitz.open(pdf_path)
-    for i in range(doc.page_count):
-        if keyword.lower() in doc[i].get_text().lower():
-            pages.append(i + 1)
-    doc.close()
+import fitz
+doc = fitz.open(pdf_path)
+for i in range(min(30, doc.page_count)):
+    text = doc[i].get_text()
+    print(f'=== Page {i+1} ===')
+    print(text)
+doc.close()
 ```
 
-### Step 3: 精确读取
+不需要索引，不需要关键词搜索，直接读前面的章节最快最准。
 
-只读取 Step 2 定位到的目标页面：
+### 精确查询（"LPUART如何初始化"、"PTA0复用功能"）
+
+**Step 1: 获取目录定位章节**
+
+```python
+import fitz
+doc = fitz.open(pdf_path)
+
+# 方法A: 用PyMuPDF的TOC功能
+toc = doc.get_toc()
+for level, title, page in toc:
+    if any(k in title.upper() for k in keywords):
+        print(f'  [{page}] {title}')
+
+# 方法B: 如果TOC为空，读前5页文字找目录
+if not toc:
+    for i in range(5):
+        print(doc[i].get_text())
+doc.close()
+```
+
+**Step 2: 关键词搜索定位具体页码**
+
+在目标章节范围内搜索：
 
 ```python
 doc = fitz.open(pdf_path)
-for page_num in pages:
+keywords = ['LPUART', 'initialization']
+
+for i in range(start_page, end_page):
+    text = doc[i].get_text()
+    if any(k.upper() in text.upper() for k in keywords):
+        print(f'Page {i+1}: hit')
+doc.close()
+```
+
+**Step 3: 精确读取目标页面**
+
+读取命中页面的**完整文字**，通读理解后提取答案：
+
+```python
+doc = fitz.open(pdf_path)
+for page_num in hit_pages:
     text = doc[page_num - 1].get_text()
     print(f'=== Page {page_num} ===')
     print(text)
 doc.close()
 ```
 
-从提取的文字中找到回答问题所需的具体内容（寄存器值、参数范围、引脚复用等）。
+**注意：** 如果内容跨页（如表格、配置步骤），顺序读取相邻页面直到内容完整。
 
-### Step 4: 视觉补充（如需要）
+**Step 4: 视觉补充（仅表格/框图结构丢失时）**
 
-表格、框图等结构化内容文字提取可能丢失格式，渲染为图片后视觉识别：
+当文字提取丢失了表格结构（如引脚复用表的列对齐），渲染为图片辅助理解：
 
 ```python
-import fitz
-
 doc = fitz.open(pdf_path)
 page = doc[page_num - 1]
-mat = fitz.Matrix(3, 3)  # 3x渲染即可看清
+mat = fitz.Matrix(3, 3)
 pix = page.get_pixmap(matrix=mat)
-pix.save('page_view.png')
+pix.save('table_view.png')
 doc.close()
-# 然后用 Read 工具查看 page_view.png
 ```
 
 ---
@@ -97,7 +119,8 @@ doc.close()
 
 ## 注意事项
 
-1. 不捏造，找不到就说找不到
-2. 标注手册版本号
-3. 表格跨页时注意翻页读完整
-4. 大型PDF不要一次性全文读取
+1. **不捏造** — 找不到就说找不到
+2. **标注手册版本** — 开头说明使用的手册版本
+3. **表格跨页** — 注意翻页读完整
+4. **概述类直接读前30页** — 不需要先建索引
+5. **精确查询先用TOC定位** — PyMuPDF的`get_toc()`比全文搜索快得多
