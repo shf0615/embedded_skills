@@ -98,6 +98,52 @@ for x, y, x2, y2, text in texts:
         nearby_texts.append(text)
 ```
 
+### 方法4: 视觉识别（位图页面或文字提取不足时）
+
+当遇到以下情况时，必须使用视觉识别作为补充：
+- 页面为纯位图（`images > 0` 且 `drawings < 100`）
+- 文字提取结果不足以回答问题（如需要看走线方向、元件符号、电路拓扑）
+- 需要确认分压电阻网络、滤波电路等具体连接拓扑
+
+**步骤：**
+
+```python
+import fitz
+
+doc = fitz.open(schematic_pdf_path)
+page = doc[target_page_index]
+
+# 判断是否需要视觉识别
+images = page.get_images()
+drawings = len(page.get_drawings())
+need_visual = (len(images) > 0 and drawings < 100) or text_insufficient
+
+if need_visual:
+    # 方案A: 提取嵌入的原始位图（保留原始分辨率）
+    for img in images:
+        xref = img[0]
+        base_image = doc.extract_image(xref)
+        # base_image['image'] 是原始字节
+        # base_image['width'] x base_image['height'] 是原始尺寸
+        # 保存后用 Read 工具查看
+    
+    # 方案B: 高倍率渲染局部区域（适用于矢量页面需要看电路拓扑时）
+    # 先通过文字搜索确定目标区域坐标，再局部放大
+    target_rect = fitz.Rect(x0, y0, x1, y1)  # 目标区域
+    mat = fitz.Matrix(8, 8)  # 8x放大
+    pix = page.get_pixmap(matrix=mat, clip=target_rect)
+    pix.save('target_region.png')
+    # 然后用 Read 工具查看图片，视觉识别电路拓扑
+```
+
+**视觉识别的用途：**
+- 确认电路拓扑结构（如分压电阻的上下关系、滤波电容的位置）
+- 识别元件符号类型（电阻/电容/电感/二极管/MOS管等）
+- 确认走线方向和连接关系（当文字坐标分析有歧义时）
+- 读取位图原理图中的元件标注（如第1页框图）
+
+**注意：** 视觉识别结果需与文字提取结果交叉验证，两者矛盾时以文字提取为准。
+
 ---
 
 ## 回答格式
