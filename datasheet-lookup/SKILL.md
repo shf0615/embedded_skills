@@ -48,7 +48,18 @@ if not pages:
 
 ### Step 3: 精确读取
 
-只读取目标页面的文字内容，回答问题。
+只读取 Step 2 定位到的目标页面：
+
+```python
+doc = fitz.open(pdf_path)
+for page_num in pages:
+    text = doc[page_num - 1].get_text()
+    print(f'=== Page {page_num} ===')
+    print(text)
+doc.close()
+```
+
+从提取的文字中找到回答问题所需的具体内容（寄存器值、参数范围、引脚复用等）。
 
 ### Step 4: 视觉补充（如需要）
 
