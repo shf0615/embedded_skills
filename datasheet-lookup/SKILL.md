@@ -25,7 +25,26 @@ description: 从芯片手册PDF中查找硬件参数信息，基于事实回答�
 
 ### Step 2: 搜索
 
-根据问题关键词，在缓存的目录索引中定位目标章节页码。如果目录没命中，对全文做关键词搜索。
+在缓存的 `.ds.json` 中查找目标页码：
+
+```python
+import json, fitz
+
+with open('xxx.ds.json') as f:
+    cache = json.load(f)
+
+# 从用户问题提取关键词，在倒排索引中查找页码
+keyword = 'uart'  # 示例
+pages = cache['keyword_index'].get(keyword, [])
+
+# 如果索引没命中，用PyMuPDF对PDF全文搜索
+if not pages:
+    doc = fitz.open(pdf_path)
+    for i in range(doc.page_count):
+        if keyword.lower() in doc[i].get_text().lower():
+            pages.append(i + 1)
+    doc.close()
+```
 
 ### Step 3: 精确读取
 
